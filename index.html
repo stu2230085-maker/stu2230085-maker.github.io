@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>乱数モデル民主主義シミュレーター</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f5f7fa;
+      margin: 0;
+      padding: 20px;
+    }
+    h1, h2 {
+      color: #333;
+    }
+    .container {
+      max-width: 900px;
+      margin: auto;
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    label {
+      display: block;
+      margin-top: 10px;
+      font-weight: bold;
+    }
+    input {
+      width: 100%;
+      padding: 6px;
+      margin-top: 4px;
+    }
+    button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background: #2563eb;
+      color: white;
+    }
+    button:hover {
+      background: #1d4ed8;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      background: #eef2ff;
+      border-radius: 8px;
+    }
+    .note {
+      margin-top: 20px;
+      font-size: 14px;
+      color: #555;
+      background: #f9fafb;
+      padding: 10px;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>乱数モデル民主主義シミュレーター</h1>
+    <p>
+      このシミュレーターは、有権者を確率モデル（乱数）として扱い、
+      民主主義的意思決定と重み付き意思決定の結果の違いを検証するための実験用サイトです。
+    </p>
+
+    <h2>1. パラメータ設定</h2>
+
+    <label>有権者数（N）</label>
+    <input id="voters" type="number" value="10000" />
+
+    <label>A層の割合（ランダム投票）</label>
+    <input id="ratioA" type="number" step="0.01" value="0.4" />
+
+    <label>B層の割合（偏向投票）</label>
+    <input id="ratioB" type="number" step="0.01" value="0.4" />
+
+    <label>C層の割合（高合理性）</label>
+    <input id="ratioC" type="number" step="0.01" value="0.2" />
+
+    <label>B層が政策Yを選ぶ確率</label>
+    <input id="probB" type="number" step="0.01" value="0.7" />
+
+    <label>C層が政策Xを選ぶ確率</label>
+    <input id="probC" type="number" step="0.01" value="0.9" />
+
+    <label>C層の票の重み（エピストクラシー）</label>
+    <input id="weightC" type="number" step="0.1" value="2" />
+
+    <button onclick="runSimulation()">シミュレーション実行</button>
+
+    <h2>2. 結果</h2>
+    <div id="output" class="result">ここに結果が表示されます</div>
+
+    <div class="note">
+      <strong>用語説明</strong><br />
+      政策X：長期的に社会的利益が大きい政策<br />
+      政策Y：短期的に人気が高い政策<br />
+      A層：完全ランダム投票（50%）<br />
+      B層：偏向情報による判断<br />
+      C層：理性的判断を行う層
+    </div>
+  </div>
+
+  <script>
+    function runSimulation() {
+      const N = Number(document.getElementById("voters").value);
+      const ratioA = Number(document.getElementById("ratioA").value);
+      const ratioB = Number(document.getElementById("ratioB").value);
+      const ratioC = Number(document.getElementById("ratioC").value);
+      const probB = Number(document.getElementById("probB").value);
+      const probC = Number(document.getElementById("probC").value);
+      const weightC = Number(document.getElementById("weightC").value);
+
+      if (Math.abs(ratioA + ratioB + ratioC - 1) > 0.01) {
+        alert("A・B・C層の割合の合計は1にしてください");
+        return;
+      }
+
+      let votesX = 0;
+      let votesY = 0;
+      let weightedX = 0;
+      let weightedY = 0;
+
+      for (let i = 0; i < N; i++) {
+        const r = Math.random();
+        let choice;
+        let weight = 1;
+
+        if (r < ratioA) {
+          choice = Math.random() < 0.5 ? "X" : "Y";
+        } else if (r < ratioA + ratioB) {
+          choice = Math.random() < probB ? "Y" : "X";
+        } else {
+          choice = Math.random() < probC ? "X" : "Y";
+          weight = weightC;
+        }
+
+        if (choice === "X") {
+          votesX++;
+          weightedX += weight;
+        } else {
+          votesY++;
+          weightedY += weight;
+        }
+      }
+
+      const normalWinner = votesX > votesY ? "政策X" : "政策Y";
+      const weightedWinner = weightedX > weightedY ? "政策X" : "政策Y";
+
+      document.getElementById("output").innerHTML = `
+        <strong>通常多数決の結果</strong><br>
+        政策X：${votesX} 票<br>
+        政策Y：${votesY} 票<br>
+        勝者：<b>${normalWinner}</b><br><br>
+
+        <strong>重み付き投票（エピストクラシー型）の結果</strong><br>
+        政策X：${weightedX.toFixed(1)} ポイント<br>
+        政策Y：${weightedY.toFixed(1)} ポイント<br>
+        勝者：<b>${weightedWinner}</b>
+      `;
+    }
+  </script>
+</body>
+</html>
